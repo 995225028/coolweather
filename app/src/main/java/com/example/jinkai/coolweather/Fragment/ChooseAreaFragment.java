@@ -6,6 +6,7 @@ import android.support.v4.app.Fragment;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.ListView;
@@ -30,6 +31,7 @@ public class ChooseAreaFragment extends Fragment implements View.OnClickListener
     protected ListView listView;
     private ArrayAdapter<String> stringArrayAdapter;
     private List<String> datalist=new ArrayList<>();
+    private int currentLevel;
 
     public static ChooseAreaFragment newInstance() {
 
@@ -51,16 +53,63 @@ public class ChooseAreaFragment extends Fragment implements View.OnClickListener
     }
 
     @Override
+    public void onActivityCreated(@Nullable Bundle savedInstanceState) {
+        super.onActivityCreated(savedInstanceState);
+        listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                if (currentLevel==LEVEL_PROVINCE){
+
+                }
+            }
+        });
+    }
+
+    @Override
     public void onClick(View view) {
         if (view.getId() == R.id.back) {
 
         }
     }
 
+    /**
+     * 初始化控件
+     * @param rootView
+     */
     private void initView(View rootView) {
         back = (Button) rootView.findViewById(R.id.back);
         back.setOnClickListener(ChooseAreaFragment.this);
         title = (TextView) rootView.findViewById(R.id.title);
         listView = (ListView) rootView.findViewById(R.id.listView);
+    }
+
+    /**
+     * 查询全国所有的省，优先从数据库中查询，如果没有查询到再去服务器查询
+     */
+    private void queryProvince(){
+
+    }
+
+    /**
+     * 查询所选省份所有的市，优先从数据库中查询，如果没有查询到再去服务器查询
+     */
+    private void queryCity(){
+
+    }
+
+    /**
+     * 查询所选市内所有的县，优先从数据库中查询，如果没有查询到再去服务器查询
+     */
+    private void queryCounty(){
+
+    }
+
+    /**
+     * 根据传入的地址和类型从服务器上查询省市县数据
+     * @param address
+     * @param type
+     */
+    private void queryFromServer(String address,final String type){
+
     }
 }
