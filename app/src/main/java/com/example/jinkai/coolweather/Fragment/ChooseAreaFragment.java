@@ -15,8 +15,14 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.example.jinkai.coolweather.R;
+import com.example.jinkai.coolweather.db.City;
+import com.example.jinkai.coolweather.db.County;
+import com.example.jinkai.coolweather.db.Province;
+import com.example.jinkai.coolweather.utils.DbUtil;
 import com.example.jinkai.coolweather.utils.HttpUtil;
 import com.google.gson.Gson;
+
+import org.litepal.crud.DataSupport;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -42,6 +48,27 @@ public class ChooseAreaFragment extends Fragment implements View.OnClickListener
     private List<String> datalist=new ArrayList<>();
     private int currentLevel;
     private ProgressDialog progressDialog;
+    /**
+     * 省列表
+     */
+    private List<Province> provinceList;
+    /**
+     * 市列表
+     */
+    private List<City> cityList;
+    /**
+     * 县列表
+     */
+    private List<County> countiesList;
+    /**
+     * 被选中的省份
+     */
+    private Province selectedProvince;
+    /**
+     * 被选中的城市
+     */
+    private City selectedCity;
+
 
     public static ChooseAreaFragment newInstance() {
 
@@ -55,8 +82,8 @@ public class ChooseAreaFragment extends Fragment implements View.OnClickListener
     @Nullable
     @Override
     public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
-        initView(rootView);
         rootView = inflater.inflate(R.layout.chose_area, container,false);
+        initView(rootView);
         stringArrayAdapter = new ArrayAdapter(getContext(),android.R.layout.simple_list_item_1,datalist);
         listView.setAdapter(stringArrayAdapter);
         return rootView;
@@ -66,19 +93,29 @@ public class ChooseAreaFragment extends Fragment implements View.OnClickListener
     public void onActivityCreated(@Nullable Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
         listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
                 if (currentLevel==LEVEL_PROVINCE){
-
+                    selectedProvince = provinceList.get(position);
+                    queryCity();
+                }else if (currentLevel==LEVEL_CITY){
+                    selectedCity=cityList.get(position);
+                    queryCounty();
                 }
             }
         });
+        queryProvince();
     }
 
     @Override
     public void onClick(View view) {
         if (view.getId() == R.id.back) {
-
+            if (currentLevel==LEVEL_COUNTY){
+                queryCity();
+            }else if (currentLevel==LEVEL_CITY){
+                queryProvince();
+            }
         }
     }
 
@@ -97,21 +134,66 @@ public class ChooseAreaFragment extends Fragment implements View.OnClickListener
      * 查询全国所有的省，优先从数据库中查询，如果没有查询到再去服务器查询
      */
     private void queryProvince(){
-
+        title.setText("中国");
+        back.setVisibility(View.GONE);
+        provinceList = DataSupport.findAll(Province.class);
+        if (provinceList.size()>0){
+            datalist.clear();
+            for (Province province:provinceList) {
+                datalist.add(province.getProvinceName());
+            }
+            stringArrayAdapter.notifyDataSetChanged();
+            listView.setSelection(0);
+            currentLevel=LEVEL_PROVINCE;
+        }else {
+            String address="http://guolin.tech/api/china";
+            queryFromServer(address,"province");
+        }
     }
 
     /**
      * 查询所选省份所有的市，优先从数据库中查询，如果没有查询到再去服务器查询
      */
     private void queryCity(){
-
+        title.setText(selectedProvince.getProvinceName());
+        back.setVisibility(View.VISIBLE);
+        cityList = DataSupport.where("provinceID=?",
+                String.valueOf(selectedProvince.getId())).find(City.class);
+        if (cityList.size()>0){
+            datalist.clear();
+            for (City city:cityList) {
+                datalist.add(city.getCityName());
+            }
+            stringArrayAdapter.notifyDataSetChanged();
+            listView.setSelection(0);
+            currentLevel=LEVEL_CITY;
+        }else {
+            String address="http://guolin.tech/api/china/"+selectedProvince.getProvinceCode();
+            queryFromServer(address,"city");
+        }
     }
 
     /**
      * 查询所选市内所有的县，优先从数据库中查询，如果没有查询到再去服务器查询
      */
     private void queryCounty(){
-
+        title.setText(selectedCity.getCityName());
+        back.setVisibility(View.VISIBLE);
+        countiesList = DataSupport.where("cityID=?",String.valueOf(selectedCity.getId())).find(County.class);
+        if (countiesList.size()>0){
+            datalist.clear();
+            for (County county:countiesList) {
+                datalist.add(county.getCountyName());
+            }
+            stringArrayAdapter.notifyDataSetChanged();
+            listView.setSelection(0);
+            currentLevel=LEVEL_COUNTY;
+        }else {
+            int provinceCode = selectedProvince.getProvinceCode();
+            int cityCode = selectedCity.getCityCode();
+            String address="http://guolin.tech/api/china/"+provinceCode+"/"+cityCode;
+            queryFromServer(address,"county");
+        }
     }
 
     /**
@@ -137,8 +219,28 @@ public class ChooseAreaFragment extends Fragment implements View.OnClickListener
             @Override
             public void onResponse(Call call, Response response) throws IOException {
                 String responseStr = response.body().string();
+                boolean result=false;
                 if ("province".equals(type)){
-
+                    result = DbUtil.handleProvinceResponse(responseStr);
+                }else if ("city".equals(type)){
+                    result=DbUtil.handleCityResponse(responseStr,selectedProvince.getId());
+                }else if ("county".equals(type)){
+                    result=DbUtil.handleCountyResponse(responseStr,selectedCity.getId());
+                }
+                if (result){
+                    getActivity().runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            closeProgressDialog();
+                            if ("province".equals(type)){
+                                queryProvince();
+                            }else if ("city".equals(type)){
+                                queryCity();
+                            }else if ("county".equals(type)){
+                                queryCounty();
+                            }
+                        }
+                    });
                 }
             }
         });
