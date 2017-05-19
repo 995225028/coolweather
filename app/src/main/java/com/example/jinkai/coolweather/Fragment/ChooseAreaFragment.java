@@ -1,6 +1,7 @@
 package com.example.jinkai.coolweather.Fragment;
 
 import android.app.ProgressDialog;
+import android.content.Intent;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
@@ -15,6 +16,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.example.jinkai.coolweather.R;
+import com.example.jinkai.coolweather.WeatherActivity;
 import com.example.jinkai.coolweather.db.City;
 import com.example.jinkai.coolweather.db.County;
 import com.example.jinkai.coolweather.db.Province;
@@ -102,6 +104,12 @@ public class ChooseAreaFragment extends Fragment implements View.OnClickListener
                 }else if (currentLevel==LEVEL_CITY){
                     selectedCity=cityList.get(position);
                     queryCounty();
+                }else if (currentLevel==LEVEL_COUNTY){
+                    String weatherID = countiesList.get(position).getWeatherID();
+                    Intent intent = new Intent(getActivity(), WeatherActivity.class);
+                    intent.putExtra("weather_id",weatherID);
+                    startActivity(intent);
+                    getActivity().finish();
                 }
             }
         });

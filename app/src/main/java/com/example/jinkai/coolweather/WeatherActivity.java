@@ -1,16 +1,26 @@
 package com.example.jinkai.coolweather;
 
+import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.preference.PreferenceManager;
 import android.support.v7.app.AppCompatActivity;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.example.jinkai.coolweather.gson.Weather;
+import com.example.jinkai.coolweather.utils.DbUtil;
+import com.example.jinkai.coolweather.utils.HttpUtil;
 
+import java.io.IOException;
 import java.util.List;
+
+import okhttp3.Call;
+import okhttp3.Callback;
+import okhttp3.Response;
 
 public class WeatherActivity extends AppCompatActivity {
 
@@ -31,6 +41,18 @@ public class WeatherActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         super.setContentView(R.layout.activity_weather);
         initView();
+        SharedPreferences defaultSharedPreferences =
+                PreferenceManager.getDefaultSharedPreferences(this);
+        String weatherresponse = defaultSharedPreferences.getString("weather", null);
+        if (weatherresponse!=null){
+            Weather weather = DbUtil.handleWeatherResponse(weatherresponse);
+            showWeatherInfo(weather);
+        }else {
+            String weather_id = getIntent().getStringExtra("weather_id");
+            weatherLayout.setVisibility(View.INVISIBLE);
+            requestWeather(weather_id);
+        }
+
 
     }
 
@@ -78,5 +100,39 @@ public class WeatherActivity extends AppCompatActivity {
         carWashText.setText("洗车指数"+heWeatherBean.getSuggestion().getCw().getTxt());
         sportText.setText("运动建议"+heWeatherBean.getSuggestion().getSport().getTxt());
         weatherLayout.setVisibility(View.VISIBLE);
+    }
+    private void requestWeather(String weather_ID){
+        String url="http://guolin.tech/api/weather?cityid="+weather_ID+"&key=3aaf649f0e364044b4ed91bb4fa554fa";
+        HttpUtil.sendOkHttpRequest(url, new Callback() {
+            @Override
+            public void onFailure(Call call, IOException e) {
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        Toast.makeText(WeatherActivity.this, "获取天气信息失败", Toast.LENGTH_SHORT).show();
+                    }
+                });
+            }
+
+            @Override
+            public void onResponse(Call call, Response response) throws IOException {
+                final String weatherResponse = response.body().string();
+                final Weather weather = DbUtil.handleWeatherResponse(weatherResponse);
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        if (weather!=null && weather.getHeWeather().get(0).getStatus().equals("ok")){
+                            SharedPreferences.Editor edit =
+                                    PreferenceManager.getDefaultSharedPreferences(WeatherActivity.this).edit();
+                            edit.putString("weather",weatherResponse);
+                            edit.apply();
+                            showWeatherInfo(weather);
+                        }else {
+                            Toast.makeText(WeatherActivity.this, "获取天气失败", Toast.LENGTH_SHORT).show();
+                        }
+                    }
+                });
+            }
+        });
     }
 }
