@@ -12,13 +12,13 @@
         android:layout_height="match_parent"
         android:scaleType="centerCrop"/>
     <ScrollView
-        android:layout_marginTop="15dp"
         android:id="@+id/weather_layout"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:scrollbars="none"
         android:overScrollMode="never">
         <LinearLayout
+            android:fitsSystemWindows="true"
             android:orientation="vertical"
             android:layout_width="match_parent"
             android:layout_height="wrap_content">
