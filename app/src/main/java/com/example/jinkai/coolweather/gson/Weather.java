@@ -6,7 +6,7 @@ import java.util.List;
  * Created by jinkai on 2017/5/16.
  */
 
-public class WeatherInfo {
+public class Weather {
 
     private List<HeWeatherBean> HeWeather;
 

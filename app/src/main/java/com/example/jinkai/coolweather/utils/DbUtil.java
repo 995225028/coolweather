@@ -5,12 +5,12 @@ import android.text.TextUtils;
 import com.example.jinkai.coolweather.db.City;
 import com.example.jinkai.coolweather.db.County;
 import com.example.jinkai.coolweather.db.Province;
+import com.example.jinkai.coolweather.gson.Weather;
+import com.google.gson.Gson;
 
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
-
-import java.util.List;
 
 /**
  * Created by jinkai on 2017/5/16.
@@ -91,5 +91,16 @@ public class DbUtil {
             }
         }
         return false;
+    }
+
+    /**
+     * 将返回的Json数据解析成WeatherInfo实体类
+     * @param response
+     * @return
+     */
+    public static Weather handleWeatherResponse(String response){
+        Gson gson = new Gson();
+        Weather weather = gson.fromJson(response, Weather.class);
+        return weather;
     }
 }
