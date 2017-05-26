@@ -14,7 +14,7 @@ import android.widget.Button;
 import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
-
+import com.example.jinkai.coolweather.MainActivity;
 import com.example.jinkai.coolweather.R;
 import com.example.jinkai.coolweather.WeatherActivity;
 import com.example.jinkai.coolweather.db.City;
@@ -22,14 +22,10 @@ import com.example.jinkai.coolweather.db.County;
 import com.example.jinkai.coolweather.db.Province;
 import com.example.jinkai.coolweather.utils.DbUtil;
 import com.example.jinkai.coolweather.utils.HttpUtil;
-import com.google.gson.Gson;
-
 import org.litepal.crud.DataSupport;
-
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-
 import okhttp3.Call;
 import okhttp3.Callback;
 import okhttp3.Response;
@@ -71,7 +67,6 @@ public class ChooseAreaFragment extends Fragment implements View.OnClickListener
      */
     private City selectedCity;
 
-
     public static ChooseAreaFragment newInstance() {
 
         Bundle args = new Bundle();
@@ -94,6 +89,7 @@ public class ChooseAreaFragment extends Fragment implements View.OnClickListener
     @Override
     public void onActivityCreated(@Nullable Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
+        listView.setBackgroundColor(getResources().getColor(R.color.colorNormal));
         listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
 
             @Override
@@ -105,11 +101,23 @@ public class ChooseAreaFragment extends Fragment implements View.OnClickListener
                     selectedCity=cityList.get(position);
                     queryCounty();
                 }else if (currentLevel==LEVEL_COUNTY){
+                    //获取选中县的weatherID
                     String weatherID = countiesList.get(position).getWeatherID();
-                    Intent intent = new Intent(getActivity(), WeatherActivity.class);
-                    intent.putExtra("weather_id",weatherID);
-                    startActivity(intent);
-                    getActivity().finish();
+                    //如果是MainActivity中的fragment就跳转到WeatherActivity
+                    if (getActivity() instanceof MainActivity){
+                        Intent intent = new Intent(getActivity(), WeatherActivity.class);
+                        //将weather_id传过去
+                        intent.putExtra("weather_id",weatherID);
+                        startActivity(intent);
+                        getActivity().finish();
+                        //如果是WetherActivity中的fragment就关闭策划菜单，并刷新数据。
+                    }else if (getActivity() instanceof WeatherActivity){
+                        WeatherActivity weatherActivity=(WeatherActivity) getActivity();
+                        weatherActivity.drawerlauout.closeDrawers();
+                        weatherActivity.swipeRefresh.setRefreshing(true);
+                        weatherActivity.requestWeather(weatherID);
+                    }
+
                 }
             }
         });

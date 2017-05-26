@@ -4,8 +4,8 @@ import org.litepal.crud.DataSupport;
 
 /**
  * Created by jinkai on 2017/5/15.
+ * City表实体类
  */
-
 public class City extends DataSupport{
     private int id;
     private String cityName;
